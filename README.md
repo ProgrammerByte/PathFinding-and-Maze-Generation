@@ -19,6 +19,7 @@ While editing:
 3 - Select finish tile  
 Left Click - Place currently selected tile  
 Right Click - Remove tile  
+C - Clear all tiles
   
 M - Select Primm's algorithm  
 D - Select Dijkstra's algorithm  
