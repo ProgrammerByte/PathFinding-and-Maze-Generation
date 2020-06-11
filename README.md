@@ -7,6 +7,7 @@ For solving mazes:
 -Depth first traversal (doesn't guarantee the shortest path to the goal).  
 -Dead End Backtracker / Tree Trimmer (an algorithm I came up with myself, however only works for perfect mazes (fully connected however no possible cycles)).  
 -A Star algorithm (Dijkstra's algorithm but has a sense of direction).  
+-Depth Star algorithm (Depth first traversal however it prioritises tiles which are closer to the goal (however still doesn't guarantee the shortest path to the goal)).  
 
 For creating mazes:  
 -Randomised Primm's algorithm  
