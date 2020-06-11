@@ -1,11 +1,12 @@
 package com.mygdx.game;
 
-public class TreeTrimming {
+public class TreeTrimming extends Algorithm{
 	protected int[][] vertexOrders; //Stores all vertex orders of the tree
 	protected int[] currentNode; //Used for displaying solution
 	protected int xCount, yCount; //Size of vertexOrders array
 	
 	public TreeTrimming(Tile[][] tiles) { //Sets everything up
+		super();
 		this.xCount = tiles.length;
 		this.yCount = tiles[0].length;
 		int adjacent, xVal, yVal;
@@ -32,7 +33,7 @@ public class TreeTrimming {
 				else if (tiles[i][x].getType() == 2) {
 					this.setCurrentNode(new int[] {i, x});
 				}
-				this.vertexOrders[i][x] = adjacent; //-1 if 
+				this.vertexOrders[i][x] = adjacent; //-1 if wall
 			}
 		}
 	}
@@ -71,6 +72,7 @@ public class TreeTrimming {
 				}
 			}
 		}
+		this.setHasWon(finished);
 		return finished;
 	}
 	

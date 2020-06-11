@@ -1,12 +1,12 @@
 package com.mygdx.game;
 
-public class Depth { //Depth-first graph traversal algorithm
+public class Depth extends Algorithm { //Depth-first graph traversal algorithm
 	protected int[][] stack; //Stores all previously visited tiles
 	protected int[] lastNode;
-	protected boolean hasWon;
 	protected int currentVal;
 	
 	public Depth(int[] playerPos) {
+		super();
 		this.stack = new int[][] {{playerPos[0], playerPos[1]}};
 		this.lastNode = new int[0];
 		this.hasWon = false;
@@ -36,7 +36,7 @@ public class Depth { //Depth-first graph traversal algorithm
 				if (xVal >= 0 && xVal < tiles.length && yVal >= 0 && yVal < tiles[0].length) {
 					if (tiles[xVal][yVal].getType() == 3) {
 						this.setHasWon(true);
-						return false;
+						return true;
 					}
 					else if (tiles[xVal][yVal].getType() == 0) {
 						available = true;
@@ -49,15 +49,15 @@ public class Depth { //Depth-first graph traversal algorithm
 			}
 			if (available == false) {
 				this.setLastNode(stack[stack.length - 1]);
-				tiles[stack[length - 1][0]][stack[length - 1][1]].changeType(5, colours);
+				tiles[stack[length - 1][0]][stack[length - 1][1]].changeSpace(5, colours);
 				stack = Library.removeValue(stack, stack.length - 1);
 			}
 			
 			this.setStack(stack);
-			return true;
+			return false;
 		}
 		else {
-			return false;
+			return true;
 		}
 	}
 	
@@ -90,14 +90,6 @@ public class Depth { //Depth-first graph traversal algorithm
 	
 	public void setLastNode(int[] value) {
 		lastNode = value.clone();
-	}
-	
-	public boolean getHasWon() {
-		return hasWon;
-	}
-	
-	public void setHasWon(boolean value) {
-		hasWon = value;
 	}
 	
 	public int getCurrentVal() {

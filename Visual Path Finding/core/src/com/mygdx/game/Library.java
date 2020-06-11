@@ -36,4 +36,28 @@ public class Library { //Where commonly used functions across the entire program
 		}
 		return result;
 	}
+	
+	public static int[] addInt(int[] list, int value) {
+		int length = list.length;
+		int[] result = new int[length + 1];
+		for (int i = 0; i < length; i++) {
+			result[i] = list[i];
+		}
+		result[length] = value;
+		return result;
+	}
+	
+	public static int[] removeInt(int[] list, int index) {
+		int length = list.length;
+		int[] result = new int[length - 1];
+		for (int i = 0; i < length; i++) {
+			if (i < index) {
+				result[i] = list[i];
+			}
+			else if (i > index) {
+				result[i - 1] = list[i];
+			}
+		}
+		return result;
+	}
 }

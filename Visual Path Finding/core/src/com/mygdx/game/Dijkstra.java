@@ -1,13 +1,12 @@
 package com.mygdx.game;
 
 //TODO - ADD A SHOW SOLUTION METHOD!!! (AND GET THIS WORKING)
-public class Dijkstra {
+public class Dijkstra extends Algorithm {
 	protected int[][] visiting, winningPath;
 	protected int solutionIndex, xCount, yCount;
-	protected boolean running;
 	
 	public Dijkstra(Tile[][] tiles, int[] playerPos) {
-		this.running = true;
+		super();
 		this.solutionIndex = 0;
 		this.xCount = tiles.length;
 		this.yCount = tiles[0].length;
@@ -16,8 +15,9 @@ public class Dijkstra {
 	
 	public boolean cycle(Tile[][] tiles, float[][] colours) {
 		int[][] visiting = this.getVisiting();
-		boolean hasWon = false;
+		//boolean hasWon = false;
 		if (visiting.length != 0) {
+			boolean finished = false;
 			int[][] winningPath;
 			int xCount = this.getXCount();
 			int yCount = this.getYCount();
@@ -43,7 +43,7 @@ public class Dijkstra {
 						type = tiles[ind1][ind2].getType();
 						if (type == 3) {
 							//isRunning = false;
-							hasWon = true;
+							this.setHasWon(true);
 							//tiles[ind1][ind2].setShortestPath(addValue(tiles[x][y].getShortestPath(), visiting[i]));
 							winningPath = new int[][] {{x, y}};
 							
@@ -55,6 +55,7 @@ public class Dijkstra {
 							winningPath = Library.removeValue(winningPath, winningPath.length - 1);
 							
 							this.setWinningPath(winningPath);
+							finished = true;
 						}
 						else if (type == 0) {
 							tiles[ind1][ind2].changeType(5, colours);
@@ -65,12 +66,11 @@ public class Dijkstra {
 				}
 			}
 			this.setVisiting(newVisits);
+			return finished;
 		}
 		else {
-			this.setRunning(false);
-			//clearTime = true;
+			return true;
 		}
-		return hasWon;
 	}
 	
 	public boolean displaySolution(Tile[][] tiles, float[][] colours) {
@@ -86,51 +86,6 @@ public class Dijkstra {
 		}
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	//TODO - MAYBE MOVE THE BELOW METHODS ELSEWHERE
-	/*public int[][] addValue(int[][] list, int[] values) { //adds a new node to the visiting list
-		int[][] result = new int[list.length + 1][2];
-		for (int i = 0; i < list.length; i++) {
-			result[i] = list[i].clone();
-		}
-		result[list.length] = values.clone();
-		return result;
-	}
-	
-	public int[][] removeValue(int[][] list, int index) { //Removes a value from a list given the list and index of item to remove
-		//The following removes the desired value
-		int[][] result = new int[list.length - 1][];
-		for (int i = 0; i < list.length; i++) {
-			if (i > index) {
-				result[i - 1] = list[i].clone();
-			}
-			else if (i != index) {
-				result[i] = list[i].clone();
-			}
-		}
-		return result;
-	}*/
-	
-	
-	
-	
-	
-	
-	
-	
-	public boolean getRunning() {
-		return running;
-	}
-	
-	public void setRunning(boolean value) {
-		running = value;
-	}
 	
 	public int getSolutionIndex() {
 		return solutionIndex;

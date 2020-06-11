@@ -8,6 +8,7 @@ import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
@@ -16,11 +17,15 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 //TODO - ADD BACK LOOPING MAYBE
 public class PathFinding extends ApplicationAdapter {
 	ShapeRenderer sr;
+	SpriteBatch batch;
+	BitmapFont font;
 	
-	Primms primms;
-	TreeTrimming treeTrimming;
-	Dijkstra dijkstra;
-	Depth depth;
+	Algorithm algorithm;
+	
+	//Primms primms;
+	//TreeTrimming treeTrimming;
+	//Dijkstra dijkstra;
+	//Depth depth;
 	
 	float[][] colours = new float[][] {{0, 0, 0}, {0, 0, 1}, {1, 0, 0}, {1, 1, 0}, {0.1f, 0.2f, 0.3f}, {0.3f, 0.5f, 1}, {0.5f, 0.2f, 1}}; 
 	//Above corresponds with types: none, wall, player, objective, visited, currently visiting, winning path
@@ -30,32 +35,37 @@ public class PathFinding extends ApplicationAdapter {
 	int screenWidth = 1920;
 	int screenHeight = 1080;
 	
-	int xCount = 80;
-	int yCount = 45;
+	int xCount = 160;
+	int yCount = 90;
 	
 	int selectedType = 1;
 	
-	int[] playerPos = new int[] {0, (int)(yCount / 2)};
-	int[] goalPos = new int[] {xCount - 2, (int)(yCount / 2)};
+	int[] playerPos = new int[] {0, (int)((yCount - 1) / 2)};
+	int[] goalPos = new int[] {xCount - 2, (int)((yCount - 1) / 2)};
 	
 	float cellWidth = (float)screenWidth / xCount;
 	float cellHeight = (float)screenHeight / yCount;
 	
-	String solveType = "Dijkstra";
+	String solveType = "Dijkstra", state = "menu";
 	
+	Button[] buttons;
 	Tile[][] tiles = new Tile[xCount][yCount];
 	
-	boolean grid = false, isRunning = false, hasWon = false, clearTime = false, isEditing = true, isMaze = false;
+	boolean grid = false, isRunning = false, hasWon = false, clearTime = false, isEditing = true, isMaze = false, isHeld = false;
 	
 	//int[][] visiting = new int[0][2];
 	
 	int frameCount = 0, timeDelay = 1;
+	int offset, xPos1, xPos2, yPos, increment;
 	
 	@Override
 	public void create() {
 		sr = new ShapeRenderer();
+		batch = new SpriteBatch();
+		font = new BitmapFont();
+		font.getData().setScale(screenHeight / 192);
 		
-		for (int i = 0; i < xCount; i++) {
+		for (int i = 0; i < xCount; i++) { //initialises grid
 			for (int j = 0; j < yCount; j++) {
 				tiles[i][j] = new Tile(colours[0], i * cellWidth, j * cellHeight);
 			}
@@ -63,17 +73,41 @@ public class PathFinding extends ApplicationAdapter {
 		
 		tiles[playerPos[0]][playerPos[1]].changeType(2, colours);
 		tiles[goalPos[0]][playerPos[1]].changeType(3, colours);
+		
+		
+		String[] pathFinders = new String[] {"Tree-Trimming", "Dijkstra", "A-Star", "Depth-First"}; //initialises menu
+		String[] mazeGenerators = new String[] {"Primms", "R-Backtracker", "R-Division", "R-Division-H", "R-Division-V", "Mazectric"};
+		int length = pathFinders.length;
+		buttons = new Button[length + mazeGenerators.length];
+		xPos1 = screenWidth / 8;
+		xPos2 = (screenWidth * 5) / 8;
+		increment = screenHeight / 8;
+		yPos = ((2 * screenHeight ) / 3) + increment;
+		int width = screenWidth / 4;
+		int height = screenHeight / 10;
+		offset = (int) (height * 0.9);
+		for (int i = 0; i < 10; i++) {
+			if (i < length) { 
+				buttons[i] = new Button(xPos1, yPos - (int)((i + 1.3) * increment), width, height, pathFinders[i]);
+			}
+			else {
+				buttons[i] = new Button(xPos2, yPos - (int)(((i + 1.3) - length) * increment), width, height, mazeGenerators[i - length]);
+			}
+		}
 	}
 	
 	public void editGrid() {
 		int type = -1;
 		if (Gdx.input.isButtonPressed(Buttons.RIGHT)) {
-			//System.out.println("AAAAAA");
 			type = 0;
 		}
 		else if (Gdx.input.isButtonPressed(Buttons.LEFT)) {
-			//System.out.println("AAAAAA");
-			type = selectedType;
+			if (isHeld == false) {
+				type = selectedType;
+			}
+		}
+		else {
+			isHeld = false; //isheld prevents the user from altering the grid by left clicking immediately after closing the menu
 		}
 		
 		if (type != -1) {
@@ -108,58 +142,49 @@ public class PathFinding extends ApplicationAdapter {
 		}
 	}
 	
-	/*public boolean changeSpace(int xPos, int yPos, int type) { //whether successful
-		if (tiles[xPos][yPos].getType() != 2 && tiles[xPos][yPos].getType() != 3) {
-			tiles[xPos][yPos].changeType(type, colours);
-			return true;
-		}
-		return false;
-	}*/
+	public void setupMaze() { //moves players to positions where the tree trimming algorithm will work with 100% certainty
+		tiles[playerPos[0]][playerPos[1]].changeType(0, colours);
+		tiles[goalPos[0]][goalPos[1]].changeType(0, colours);
+		
+		playerPos[0] -= playerPos[0] % 2;
+		playerPos[1] -= playerPos[1] % 2;
+		goalPos[0] -= goalPos[0] % 2;
+		goalPos[1] -= goalPos[1] % 2;
+		
+		tiles[playerPos[0]][playerPos[1]].changeType(2, colours);
+		tiles[goalPos[0]][goalPos[1]].changeType(3, colours);
+		
+		isMaze = true;
+	}
 	
 	public void input() {
 		if (Gdx.input.isKeyPressed(Keys.NUM_1)) {
 			selectedType = 1;
 		}
-		if (Gdx.input.isKeyPressed(Keys.NUM_2)) {
+		else if (Gdx.input.isKeyPressed(Keys.NUM_2)) {
 			selectedType = 2;
 		}
-		if (Gdx.input.isKeyPressed(Keys.NUM_3)) {
+		else if (Gdx.input.isKeyPressed(Keys.NUM_3)) {
 			selectedType = 3;
 		}
-		if (Gdx.input.isKeyJustPressed(Keys.Q)) {
+		else if (Gdx.input.isKeyJustPressed(Keys.Q)) {
 			grid = !grid;
 		}
 		//if (Gdx.input.isKeyJustPressed(Keys.L)) {
 		//	isLooping = !isLooping;
 		//}
-		if (Gdx.input.isKeyPressed(Keys.T)) {
-			if (isEditing == true) {
-				solveType = "TreeTrimming";
+		if (isEditing == true) {
+			
+			if (Gdx.input.isKeyPressed(Keys.M)) {
+				state = "menu";
 			}
-		}
-		if (Gdx.input.isKeyPressed(Keys.D)) {
-			if (isEditing == true) {
-				solveType = "Dijkstra";
+			
+			else if (Gdx.input.isKeyPressed(Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Keys.CONTROL_RIGHT)) {
+				state = "controls";
 			}
-		}
-		if (Gdx.input.isKeyPressed(Keys.F)) {
-			if (isEditing == true) {
-				solveType = "Depth";
-			}
-		}
 			
 			
-		if (Gdx.input.isKeyPressed(Keys.M)) {
-			if (isEditing == true) {
-				//isMaze = true; //TODO - USE THIS VARIABLE FOR TREE TRIMMING ALGORITHM
-				//generateMazeNew();
-				solveType = "Primms";
-			}
-		}
-		
-		
-		if (Gdx.input.isKeyJustPressed(Keys.C)) {
-			if (isEditing == true) {
+			else if (Gdx.input.isKeyJustPressed(Keys.C)) {
 				for (int i = 0; i < xCount; i++) {
 					for (int x = 0; x < yCount; x++) {
 						tiles[i][x].changeSpace(0, colours);
@@ -168,27 +193,58 @@ public class PathFinding extends ApplicationAdapter {
 				isMaze = false;
 			}
 		}
-		if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
+		
+		if (Gdx.input.isKeyJustPressed(Keys.ENTER)) { //run / stop TODO - MOVE TO SEPARATE METHOD
 			if (isEditing == true) {
 			//	tiles[playerPos[0]][playerPos[1]].setType(5); //changing type but not colour to indicate visiting node
 				//visiting = new int[][] {{playerPos[0], playerPos[1]}};
 				isRunning = true;
 				
 				if (solveType.equals("Dijkstra")) {
-					dijkstra = new Dijkstra(tiles, playerPos);
+					algorithm = new Dijkstra(tiles, playerPos);
 				}
 				
-				else if (solveType.equals("TreeTrimming") && isMaze == true) {
-					treeTrimming = new TreeTrimming(tiles);
+				else if (solveType.equals("A-Star")) {
+					algorithm = new AStar(tiles, playerPos, goalPos);
 				}
 				
-				else if (solveType.equals("Depth")) {
-					depth = new Depth(playerPos);
+				else if (solveType.equals("Tree-Trimming")) {
+					if (isMaze == true) {
+						algorithm = new TreeTrimming(tiles);
+					}
+					else {
+						algorithm = new Dijkstra(tiles, playerPos); //instead of returning an error if the maze is imperfect, the selected algorithm will change to dijkstra's
+					}
+				}
+				
+				else if (solveType.equals("Depth-First")) {
+					algorithm = new Depth(playerPos);
 				}
 				
 				else if (solveType.equals("Primms")) {
-					//isMaze = true;
-					primms = new Primms(tiles, colours);
+					setupMaze();
+					algorithm = new Primms(tiles, colours);
+				}
+				
+				else if (solveType.equals("R-Division")) {
+					setupMaze();
+					algorithm = new RecursiveDivision(tiles, colours, 0);
+				}
+				else if (solveType.equals("R-Division-V")) {
+					algorithm = new RecursiveDivision(tiles, colours, 1);
+					setupMaze();
+				}
+				else if (solveType.equals("R-Division-H")) {
+					setupMaze();
+					algorithm = new RecursiveDivision(tiles, colours, -1);
+				}
+				
+				else if (solveType.equals("Mazectric")) {
+					algorithm = new Mazectric(tiles, colours);
+				}
+				else if (solveType.equals("R-Backtracker")) {
+					setupMaze();
+					algorithm = new RecursiveBacktracker(tiles, colours);
 				}
 			}
 			else {
@@ -203,61 +259,12 @@ public class PathFinding extends ApplicationAdapter {
 		}
 	}
 	
-	/*public int[][] Library.addValue(int[][] list, int[] values) { //adds a new node to the visiting list
-		int[][] result = new int[list.length + 1][2];
-		for (int i = 0; i < list.length; i++) {
-			result[i] = list[i].clone();
-		}
-		result[list.length] = values.clone();
-		return result;
-	}*/
-	
 	public void displaySolution() {
-		boolean hasFinished = false;
-		if (solveType.equals("Dijkstra")) {
-			if (dijkstra.displaySolution(tiles, colours) == true) {
-				hasFinished = true;
-			}
-		}
-		else if (solveType.equals("TreeTrimming")) {
-			if (isMaze == true) {
-				if (treeTrimming.displaySolution(tiles, colours) == true) {
-					hasFinished = true;
-				}
-			}
-			else {
-				hasFinished = true;
-			}
-		}
-		else if (solveType.equals("Depth")) {
-			if (depth.displaySolution(tiles, colours) == true) {
-				hasFinished = true;
-			}
-		}
-		
-		if (hasFinished == true) {
+		if (algorithm.displaySolution(tiles, colours) == true) {
 			hasWon = false;
-			//if (isLooping == false) {
 			isRunning = false;
-			//}
-			
-			/*else {
-				clearTime = true;
-				//solutionIndex = 0;
-				isRunning = true;
-				//visiting = new int[][] {{playerPos[0], playerPos[1]}};
-				//generateMazeNew();
-				primms = new Primms(tiles, colours);
-				
-				if (solveType.equals("TreeTrimming")) {
-					treeTrimming = new TreeTrimming(tiles);
-					//isEditing = false;
-				}
-				
-				else if (solveType.equals("Dijkstra")) {
-					dijkstra = new Dijkstra(tiles, playerPos);
-				}
-			}*/
+			isEditing = true;
+			clearTime = true;
 		}
 	}
 	
@@ -278,177 +285,111 @@ public class PathFinding extends ApplicationAdapter {
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		input();
-		if (clearTime == true) {
-			clearGrid();
-		}
 		
-		else if (isEditing == true) {
-			editGrid();
-		}
-		else if (isRunning == true && frameCount % timeDelay == 0) {
-			if (hasWon == false) {
-				if (solveType.equals("Dijkstra")) {
-					if (dijkstra.cycle(tiles, colours) == true) {
-						hasWon = true;
-					}
-					if (dijkstra.getRunning() == false) {
-						isRunning = false;
-					}
-				}
-				else if (solveType.equals("TreeTrimming") && isMaze == true) {
-					if (treeTrimming.cycle(tiles, colours) == true) {
-						hasWon = true;
-					}
-				}
-				else if (solveType.equals("Depth")) {
-					if (depth.cycle(tiles, colours) == false) {
-						if (depth.getHasWon() == true) {
-							hasWon = true;
-							isRunning = true;
-						}
-						else {
-							hasWon = false;
+		if (state.equals("grid")) { //the main state of the program
+			if (clearTime == true) {
+				clearGrid();
+			}
+			
+			else if (isEditing == true) {
+				editGrid();
+			}
+			else if (isRunning == true && frameCount % timeDelay == 0) {
+				if (hasWon == false) {
+					if (algorithm.cycle(tiles, colours) == true) {
+						//isRunning = false;
+						hasWon = algorithm.getHasWon();
+						if (hasWon == false) {
 							isRunning = false;
+							isEditing = true;
+							clearTime = true;
 						}
 					}
 				}
-				else if (solveType.equals("Primms")) {
-					if (primms.generateMazeNew(tiles, colours) == false) {
-						isRunning = false;
-						isMaze = primms.getIsMaze();
-					}
+				else {
+					displaySolution();
 				}
 			}
-			else {
-				displaySolution();
-			}
-		}
-		
-		sr.begin(ShapeType.Filled);
-		for (int i = 0; i < xCount; i++) {
-			for (int j = 0; j < yCount; j++) {
-				tempColour = tiles[i][j].getColour();
-				sr.setColor(tempColour[0], tempColour[1], tempColour[2], 1);
-				sr.rect(tiles[i][j].getX(), tiles[i][j].getY(), cellWidth, cellHeight);
-			}
-		}
-		sr.end();
-		
-		
-		//Follow render block creates a grid for creating a maze
-		if (grid == true) {
-			sr.begin(ShapeType.Line);
-			sr.setColor(0.9f, 0.9f, 0.9f, 1);
+			
+			sr.begin(ShapeType.Filled);
 			for (int i = 0; i < xCount; i++) {
 				for (int j = 0; j < yCount; j++) {
+					tempColour = tiles[i][j].getColour();
+					sr.setColor(tempColour[0], tempColour[1], tempColour[2], 1);
 					sr.rect(tiles[i][j].getX(), tiles[i][j].getY(), cellWidth, cellHeight);
 				}
 			}
 			sr.end();
+			//Follow render block creates a grid for creating a maze
+			if (grid == true) {
+				sr.begin(ShapeType.Line);
+				sr.setColor(0.9f, 0.9f, 0.9f, 1);
+				for (int i = 0; i < xCount; i++) {
+					for (int j = 0; j < yCount; j++) {
+						sr.rect(tiles[i][j].getX(), tiles[i][j].getY(), cellWidth, cellHeight);
+					}
+				}
+				sr.end();
+			}
+			frameCount += 1;
 		}
 		
-		frameCount += 1;
+		
+		else if (state.equals("menu")) { //TODO - perhaps move this to a different method
+			sr.begin(ShapeType.Line); //renders menu
+			sr.setColor(1, 1, 1, 0);
+			for (int i = 0; i < buttons.length; i++) {
+				sr.rect(buttons[i].getXPos(), buttons[i].getYPos(), buttons[i].getWidth(), buttons[i].getHeight());
+			}
+			sr.end();
+			
+			batch.begin();
+			font.draw(batch, "Solve a Maze:", xPos1, yPos);
+			font.draw(batch, "Create a Maze:", xPos2, yPos);
+			for (int i = 0; i < buttons.length; i++) {
+				font.draw(batch, buttons[i].getContents(), buttons[i].getXPos(), buttons[i].getYPos() + offset);
+			}
+			font.draw(batch, "Press CTRL for Controls", 0, screenHeight);
+			font.draw(batch, "Press M to return here", 0, (int)(increment * 0.5));
+			batch.end();
+			
+			
+			//following checks for input
+			if (Gdx.input.isButtonPressed(Buttons.LEFT) == true) {
+				float mouseX = Gdx.input.getX();
+				float mouseY = screenHeight - Gdx.input.getY();
+				for (int i = 0; i < buttons.length; i++) {
+					if (buttons[i].detectClick(mouseX, mouseY) == true) {
+						isHeld = true;
+						state = "grid";
+						solveType = buttons[i].getContents();
+						break;
+					}
+				}
+			}
+		}
+		
+		else if (state.equals("controls")) {
+			batch.begin();
+			font.draw(batch, "CTRL - View controls \n" +
+							 "M - View menu \n" +
+							 "ESC - Exit \n" +
+							 "Enter - Start / Stop currently selected algorithm \n" +
+							 "Left Click - Place currently selected tile / press menu button \n" +
+							 "Right Click - Remove current tile \n" +
+							 "1 - Select wall tile \n" + 
+							 "2 - Select player tile \n" + 
+							 "3 - Select goal tile \n" + 
+							 "Q - Toggle grid \n \n" +
+							 "Press M to return to the menu", 0, screenHeight);
+			batch.end();
+		}
 	}
 	
 	@Override
 	public void dispose() {
 		sr.dispose();
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*public int[][] Library.removeValue(int[][] list, int index) { //Removes a value from a list given the list and index of item to remove
-		//The following removes the desired value
-		int[][] result = new int[list.length - 1][];
-		for (int i = 0; i < list.length; i++) {
-			if (i > index) {
-				result[i - 1] = list[i].clone();
-			}
-			else if (i != index) {
-				result[i] = list[i].clone();
-			}
-		}
-		return result;
-	}*/
-	
-	
-	//TODO - THE OLD MAZE GENERATION ALGORITHM THAT CREATES A MAZE "INSTANTLY"
-	/*(public void generateMazeNew() {
-		for (int i = 0; i < xCount; i++) { //Fills in everything with walls
-			for (int x = 0; x < yCount; x++) {
-				if (i % 2 == 0 && x % 2 == 0) {
-					changeSpace(i, x, 0);
-				}
-				else {
-					if (changeSpace(i, x, 1) == false) {
-						isMaze = false;
-					}
-				}
-			}
-		}
-		
-		Random rand = new Random();
-		
-		int xWidth = (xCount + 1) / 2;
-		int yWidth = (yCount + 1) / 2;
-		int total = xWidth * yWidth;
-		
-		Node[][] nodes = new Node[xWidth][yWidth];
-		for (int i = 0; i < xWidth; i++) {
-			for (int x = 0; x < yWidth; x++) {
-				nodes[i][x] = new Node(i, x);
-			}
-		}
-		
-		int[][] finalArcs = new int[0][4];
-		int[][] arcs = new int[0][4];
-		
-		int xVal = (int)(rand.nextDouble() * xWidth) % xWidth;
-		int yVal = (int)(rand.nextDouble() * yWidth) % yWidth;
-		arcs = nodes[xVal][yVal].changeConnected(nodes, arcs);
-		
-		int index, xPos, yPos, xDir, yDir, skipped, length;
-		for (int a = 1; a < total; a++) { //TODO MODULI IS PROBABLY UNNECESSARY
-			length = arcs.length;
-			index = (int)(length * rand.nextDouble()) % length;
-			xPos = arcs[index][0];
-			yPos = arcs[index][1];
-			xDir = arcs[index][2];
-			yDir = arcs[index][3];
-			
-			finalArcs = Library.addValue(finalArcs, arcs[index].clone());
-			//arcs = Library.removeValue(arcs, index);
-			
-			xVal = xPos + xDir;
-			yVal = yPos + yDir;
-			arcs = nodes[xVal][yVal].changeConnected(nodes, arcs);
-			
-			skipped = 0;
-			for (int i = 0; i < length; i++) {
-				index = i - skipped;
-				if (arcs[index][0] + arcs[index][2] == xVal && arcs[index][1] + arcs[index][3] == yVal) {
-				//if (nodes[arcs[i][0] + arcs[i][2]][arcs[i][1] + arcs[i][3]].getConnected() == true) {
-					arcs = Library.removeValue(arcs, index);
-					skipped += 1;
-				//}
-				}
-			}
-		}
-		
-		for (int i = 0; i < finalArcs.length; i++) {
-			xPos = finalArcs[i][0];
-			yPos = finalArcs[i][1];
-			xDir = finalArcs[i][2];
-			yDir = finalArcs[i][3];
-			changeSpace((xPos * 2) + xDir, (yPos * 2) + yDir, 0);
-		}
-	}*/
 }
 	
 	
