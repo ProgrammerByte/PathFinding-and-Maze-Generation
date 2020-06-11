@@ -22,7 +22,7 @@ CTRL - Access the controls screen
 1 - Select wall tile  
 2 - Select start tile  
 3 - Select finish tile  
-Left Click - Place currently selected tile  
+Left Click - Place currently selected tile / press menu button  
 Right Click - Remove tile  
 C - Clear all tiles  
   
