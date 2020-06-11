@@ -75,7 +75,7 @@ public class PathFinding extends ApplicationAdapter {
 		tiles[goalPos[0]][playerPos[1]].changeType(3, colours);
 		
 		
-		String[] pathFinders = new String[] {"Tree-Trimming", "Dijkstra", "A-Star", "Depth-First"}; //initialises menu
+		String[] pathFinders = new String[] {"Tree-Trimming", "Dijkstra", "A-Star", "Depth-First", "Depth-Star"}; //initialises menu
 		String[] mazeGenerators = new String[] {"Primms", "R-Backtracker", "R-Division", "R-Division-H", "R-Division-V", "Mazectric"};
 		int length = pathFinders.length;
 		buttons = new Button[length + mazeGenerators.length];
@@ -86,7 +86,7 @@ public class PathFinding extends ApplicationAdapter {
 		int width = screenWidth / 4;
 		int height = screenHeight / 10;
 		offset = (int) (height * 0.9);
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < buttons.length; i++) {
 			if (i < length) { 
 				buttons[i] = new Button(xPos1, yPos - (int)((i + 1.3) * increment), width, height, pathFinders[i]);
 			}
@@ -219,6 +219,10 @@ public class PathFinding extends ApplicationAdapter {
 				
 				else if (solveType.equals("Depth-First")) {
 					algorithm = new Depth(playerPos);
+				}
+				
+				else if (solveType.equals("Depth-Star")) {
+					algorithm = new DepthStar(playerPos, goalPos);
 				}
 				
 				else if (solveType.equals("Primms")) {

@@ -23,15 +23,15 @@ public class Depth extends Algorithm { //Depth-first graph traversal algorithm
 		
 		if (length != 0) {
 			int[][] combinations = new int[][] {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-			int[] pos;
+			int[] currentPos;
 			int xVal, yVal;
 			boolean available = false;
-			pos = stack[length - 1].clone();
-			//tiles[pos[0]][pos[1]].changeSpace(4, colours);
+			currentPos = stack[length - 1].clone();
+			//tiles[currentPos[0]][currentPos[1]].changeSpace(4, colours);
 			
 			for (int i = 0; i < 4; i++) {
-				xVal = pos[0] + combinations[i][0];
-				yVal = pos[1] + combinations[i][1];
+				xVal = currentPos[0] + combinations[i][0];
+				yVal = currentPos[1] + combinations[i][1];
 				
 				if (xVal >= 0 && xVal < tiles.length && yVal >= 0 && yVal < tiles[0].length) {
 					if (tiles[xVal][yVal].getType() == 3) {
